@@ -48,11 +48,15 @@ procedure TConexaoClientForm.ConectarButtonClick(Sender: TObject);
 begin
   if ApelidoEdit.Text <> '' then
   begin
-    IdTCPServer.DefaultPort := StrToInt(PortaEdit.Text);
-    IdTCPServer.Active      := True;
-    Self.op_EnviaMsg('', True);
-    ConectarPanel.Enabled := False;
-    MensagemPanel.Enabled := True;
+    try
+      IdTCPServer.DefaultPort := StrToInt(PortaEdit.Text);
+      IdTCPServer.Active      := True;
+      Self.op_EnviaMsg('', True);
+      ConectarPanel.Enabled := False;
+      MensagemPanel.Enabled := True;
+    except
+      ShowMessage('Não foi possível conectar no servidor');
+    end;
   end;
 end;
 
