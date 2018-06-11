@@ -6,24 +6,28 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, IdBaseComponent,
   IdComponent, IdCustomTCPServer, IdTCPServer, IdContext, IdTCPConnection,
-  IdTCPClient;
+  IdTCPClient, Vcl.ExtCtrls;
 
 type
   TConexaoServerForm = class(TForm)
-    IdTCPServer1: TIdTCPServer;
-    Edit2: TEdit;
-    Label2: TLabel;
-    Button1: TButton;
-    Memo1: TMemo;
-    Edit1: TEdit;
-    Label1: TLabel;
-    IdTCPClient1: TIdTCPClient;
-    procedure Button1Click(Sender: TObject);
-    procedure IdTCPServer1Execute(AContext: TIdContext);
-    procedure FormClick(Sender: TObject);
+    IdTCPServer: TIdTCPServer;
+    IdTCPClient: TIdTCPClient;
+    ConexaoPanel: TPanel;
+    ConectarButton: TButton;
+    PortaEdit: TEdit;
+    PortaLabel: TLabel;
+    MensagensRecebidasMemo: TMemo;
+    MensagemPanel: TPanel;
+    UsuariosConectadosMemo: TMemo;
+    MensagensRecebidasLabel: TLabel;
+    UsuariosConectadosLabel: TLabel;
+    procedure ConectarButtonClick(Sender: TObject);
+    procedure IdTCPServerExecute(AContext: TIdContext);
   private
     function StringItem(const S: string; Posicao: Integer; const Separador: char): string;
     procedure op_EncaminhaMsg(const asMsg, asPorta, asIP: String);
+    procedure op_AtualizaConectados(const asIP: String; const abAdiciona: Boolean);
+    procedure op_RepassaMsgParaTodos(const asMsg: String);
   end;
 
 var
@@ -33,42 +37,89 @@ implementation
 
 {$R *.dfm}
 
-procedure TConexaoServerForm.Button1Click(Sender: TObject);
+procedure TConexaoServerForm.ConectarButtonClick(Sender: TObject);
 begin
-  IdTCPServer1.DefaultPort := StrToInt(Edit2.Text);
-  IdTCPServer1.Active := True;
-  Button1.Enabled := False;
-  ShowMessage('Conectado');
+  IdTCPServer.DefaultPort := StrToInt(PortaEdit.Text);
+  IdTCPServer.Active := True;
+  ConexaoPanel.Enabled := False;
+  ShowMessage('Servidor ativo');
 end;
 
-procedure TConexaoServerForm.FormClick(Sender: TObject);
-begin
-Self.op_EncaminhaMsg('testeeeeeee',
-                       '212',
-                       '127.0.0.1');
-end;
-
-procedure TConexaoServerForm.IdTCPServer1Execute(AContext: TIdContext);
+procedure TConexaoServerForm.IdTCPServerExecute(AContext: TIdContext);
 var
-  liOcorre : Integer;
-  lsMsg    : String;
+  liOcorre      : Integer;
+  lsApelido,
+  lsIP,
+  lsMsgCompleta,
+  lsMsgEnviada : String;
 begin
-  lsMsg := AContext.Connection.Socket.ReadLn;
-  Memo1.Text := Memo1.Text + #13#10 + lsMsg;
-  AContext.Connection.Socket.WriteLn(Edit1.Text);
+  lsMsgCompleta := AContext.Connection.Socket.ReadLn;
+  lsApelido     := StringItem(lsMsgCompleta, 1, ';');
+  lsIP          := StringItem(lsMsgCompleta, 2, ';');
+  lsMsgEnviada  := StringItem(lsMsgCompleta, 3, ';');
+  if Pos('/*CONECTADO*/', lsMsgEnviada) > 0 then
+  begin
+    lsMsgEnviada := lsApelido + ' entrou no chat';
+    Self.op_AtualizaConectados(lsIP, True);
+  end else
+    lsMsgEnviada := lsApelido + ': ' + lsMsgEnviada;
 
-  Self.op_EncaminhaMsg(StringItem(lsMsg, 3, ';'),
-                       StringItem(lsMsg, 2, ';'),
-                       StringItem(lsMsg, 1, ';'));
+  Self.op_RepassaMsgParaTodos(lsMsgEnviada);
+end;
+
+procedure TConexaoServerForm.op_RepassaMsgParaTodos(const asMsg : String);
+var
+  I      : Integer;
+  loList : TStringList;
+begin
+  try
+    loList      := TStringList.Create;
+    loList.Text := UsuariosConectadosMemo.Text;
+    for I := 0 to Pred(loList.Count) do
+    begin
+      Self.op_EncaminhaMsg(asMsg,
+                           PortaEdit.Text,
+                           Trim(loList[I]));
+    end;
+  finally
+    loList.Free;
+  end;
+end;
+
+procedure TConexaoServerForm.op_AtualizaConectados(const asIP : String; const abAdiciona : Boolean);
+var
+  loList : TStringList;
+  I      : Integer;
+begin
+  if (Pos(asIP, UsuariosConectadosMemo.Text) > 0) then
+  begin
+    if not abAdiciona then
+    begin
+      try
+        loList := TStringList.Create;
+        loList.Text := UsuariosConectadosMemo.Text;
+        UsuariosConectadosMemo.Text := '';
+        for I := 0 to Pred(loList.Count) do
+        begin
+          if (Pos(asIP, loList[I]) > 0) then
+            UsuariosConectadosMemo.Text := UsuariosConectadosMemo.Text + loList[I] + #13#10;
+        end;
+        UsuariosConectadosMemo.Text := Trim(UsuariosConectadosMemo.Text);
+      finally
+        loList.Free;
+      end;
+    end;
+  end else
+    UsuariosConectadosMemo.Text := UsuariosConectadosMemo.Text + #13#10 + asIP;
 end;
 
 procedure TConexaoServerForm.op_EncaminhaMsg(const asMsg, asPorta, asIP : String);
 begin
-  if asMsg <> '' then
+  if (asMsg <> '') and (asPorta <> '') and (asIP <> '') then
   begin
-    IdTCPClient1.Host := asIP;
-    IdTCPClient1.Port := StrToInt(asPorta);
-    with IdTCPClient1 do
+    IdTCPClient.Host := asIP;
+    IdTCPClient.Port := StrToInt(asPorta);
+    with IdTCPClient do
     begin
       try
         Connect;
@@ -77,7 +128,7 @@ begin
         Disconnect;
       except
         on E : Exception do
-          ShowMessage('Erro ao encaminhar mensagem' + #13#10 + e.message);
+          ShowMessage('Erro ao encaminhar mensagem' + #13#10 + e.Message );
       end;
     end;
   end;
