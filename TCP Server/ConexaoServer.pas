@@ -16,10 +16,8 @@ type
     ConectarButton: TButton;
     PortaEdit: TEdit;
     PortaLabel: TLabel;
-    MensagensRecebidasMemo: TMemo;
     MensagemPanel: TPanel;
     UsuariosConectadosMemo: TMemo;
-    MensagensRecebidasLabel: TLabel;
     UsuariosConectadosLabel: TLabel;
     procedure ConectarButtonClick(Sender: TObject);
     procedure IdTCPServerExecute(AContext: TIdContext);

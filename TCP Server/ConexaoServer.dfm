@@ -4,7 +4,7 @@ object ConexaoServerForm: TConexaoServerForm
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Servidor'
-  ClientHeight = 431
+  ClientHeight = 267
   ClientWidth = 350
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -53,40 +53,25 @@ object ConexaoServerForm: TConexaoServerForm
     Left = 0
     Top = 105
     Width = 350
-    Height = 326
+    Height = 162
     Align = alClient
     TabOrder = 1
-    object MensagensRecebidasLabel: TLabel
-      Left = 8
-      Top = 15
-      Width = 157
-      Height = 13
-      Caption = 'Mensagens recebidas de clientes'
-    end
+    ExplicitHeight = 326
     object UsuariosConectadosLabel: TLabel
       Left = 8
-      Top = 151
+      Top = 7
       Width = 99
       Height = 13
       Caption = 'Usu'#225'rios conectados'
     end
-    object MensagensRecebidasMemo: TMemo
+    object UsuariosConectadosMemo: TMemo
       Left = 8
-      Top = 34
-      Width = 329
+      Top = 26
+      Width = 332
       Height = 111
       ReadOnly = True
       ScrollBars = ssVertical
       TabOrder = 0
-    end
-    object UsuariosConectadosMemo: TMemo
-      Left = 8
-      Top = 170
-      Width = 329
-      Height = 111
-      ReadOnly = True
-      ScrollBars = ssVertical
-      TabOrder = 1
     end
   end
   object IdTCPServer: TIdTCPServer
